@@ -1,0 +1,10 @@
+#!/bin/sh
+set -e
+
+if [ "$1" = "purge" ] ; then
+	if [ -h /etc/runit/runsvdir/current ]; then
+                rm /etc/runit/runsvdir/current
+	fi
+fi
+
+#DEBHELPER#

@@ -1,0 +1,8 @@
+runit (2.1.2-39) unstable; urgency=medium
+
+    Please be aware that this version of runit reintroduces the
+    /etc/runit/ctrlaltdel script, enabling the system shutdown
+    on ctrl-alt-del keyboard request.
+    To disable this feature do 'chmod -x /etc/runit/ctrlaltdel'
+
+ -- Lorenzo Puliti <plorenzo@disroot.org>  Sun, 20 Dec 2020 11:16:49 +0100

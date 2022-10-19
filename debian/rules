@@ -1,0 +1,68 @@
+#!/usr/bin/make -f
+# There are some problems with sanitize=+all and getgroups(2), as checked in
+# runit-2.1.2/src/chkshgrp.c.
+# -- Dmitry Bogatov <KAction@gnu.org>  Sun, 24 Dec 2017 00:13:54 +0300
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all qa=+canary
+DPKG_EXPORT_BUILDFLAGS = 1
+include /usr/share/dpkg/default.mk
+export CFLAGS  += $(shell getconf LFS_CFLAGS)
+export LDFLAGS += $(shell getconf LFS_LDFLAGS)
+
+%:
+	dh $@ --sourcedirectory=runit-$(DEB_VERSION_UPSTREAM)/src \
+	      --with bash_completion,runit,buildinfo,sysuser
+
+override_dh_auto_configure:
+	echo $(CC) $(CFLAGS) > runit-$(DEB_VERSION_UPSTREAM)/src/conf-cc
+	echo $(CC) > runit-$(DEB_VERSION_UPSTREAM)/src/conf-ld
+
+override_dh_auto_build:
+	$(MAKE) debian/contrib/shutdown
+	$(MAKE) debian/contrib/lib/async-timeout
+	dh_auto_build
+
+override_dh_installsystemd:
+	dh_installsystemd --name runit --no-stop-on-upgrade
+
+override_dh_installman-arch:
+	dh_installman
+	mv debian/runit/usr/share/man/man8/shutdown.8 \
+	   debian/runit/usr/share/man/man8/runit-shutdown.8
+	mv debian/runit/usr/share/man/man8/runlevel.8 \
+	   debian/runit/usr/share/man/man8/runit-runlevel.8
+
+override_dh_runit:
+	./debian/sv/getty.in/install
+	dh_runit
+
+override_dh_installchangelogs:
+	dh_installchangelogs
+	dh_installchangelogs -p runit -p runit-init \
+	    runit-$(DEB_VERSION_UPSTREAM)/package/CHANGES
+
+override_dh_clean:
+	rm -rf debian/auto
+	dh_clean
+
+autopkgtest-image:
+	autopkgtest-build-qemu unstable ../autopkgtest.img
+
+autopkgtest:
+#	$(info Running autopkgtest with options to avoid entropy starvation)
+#	$(info For more information see #931658)
+ifeq ($(wildcard ../autopkgtest.img),)
+	$(error Qemu image ../autopkgtest.img not found. Run autopkgtest-image rule)
+endif
+ifeq ($(wildcard ../runit_$(DEB_VERSION)_$(DEB_BUILD_ARCH).deb),)
+	$(error No binary packages in parent directory. Build package)
+endif
+	autopkgtest                                            \
+	    ../runit-init_$(DEB_VERSION)_all.deb               \
+	    ../runit_$(DEB_VERSION)_$(DEB_BUILD_ARCH).deb      \
+	    .                                                  \
+	    -- qemu                                            \
+	    ../autopkgtest.img
+#	    --qemu-options='-object rng-random,filename=/dev/urandom,id=rng0 -device virtio-rng-pci,rng=rng0' \
+	    ../autopkgtest.img
+
+PHONY: autopkgtest autopkgtest-image

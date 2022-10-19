@@ -1,0 +1,18 @@
+#!/bin/sh
+exec 2>&1
+
+PATH=/sbin:/usr/sbin:/bin:/usr/bin
+
+LAST=0
+
+# While test -x is more natural, it does not consider file with
+# executable bit set on 'noexec' filesystem as executable, and /run
+# often is mounted as 'noexec'.
+[ $(stat -c %a /run/runit.reboot) = 100 ] && LAST=6
+
+echo 'Waiting for services to stop...'
+sv force-stop /etc/service/*
+sv exit /etc/service/*
+
+echo 'Running shutdown tasks...'
+/lib/runit/run_sysv_scripts "/etc/rc$LAST.d" stop

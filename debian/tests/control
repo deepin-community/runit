@@ -1,0 +1,18 @@
+Tests: init-switch
+Depends: runit,
+  procps,
+  rsyslog,
+  cron,
+  dbus,
+  udev,
+Restrictions: needs-root, isolation-machine, breaks-testbed
+
+Tests: install-953875
+Depends: systemd,
+  systemd-sysv,
+  libpam-systemd,
+  libnss-systemd,
+  policykit-1,
+  dbus,
+  udev,
+Restrictions: needs-root, allow-stderr, breaks-testbed, superficial

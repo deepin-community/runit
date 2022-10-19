@@ -1,0 +1,25 @@
+#!/bin/sh
+set -e
+
+if [ -f /etc/inittab ]; then
+  awk '
+  /^#runit-sysv maintscript -- BEGIN/ { flag = 1 }
+                                      { if (flag == 0) print; }
+  /^#runit-sysv maintscript -- END/   { flag = 0 }
+  ' /etc/inittab > /etc/inittab.tmp
+  sed -i '${/^$/d}' /etc/inittab.tmp
+  mv /etc/inittab.tmp /etc/inittab
+fi
+
+if [ "$1" = "remove" ]; then
+	# other inits maintain a compat initctl pipe, so we check that is not
+	# systemd, that initctl exists and that sysvinit-core is installed
+	if [ ! -d /run/systemd/system ] && [ -e /run/initctl ] ; then
+		if [ -e /sbin/telinit ] ; then
+			# rescan inittab to pick new entry
+			telinit q
+		fi
+	fi
+fi
+
+#DEBHELPER#

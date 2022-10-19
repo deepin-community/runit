@@ -1,0 +1,40 @@
+#!/bin/sh
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/usr/sbin:/bin:/usr/bin
+SVDIR=/etc/service
+
+mkdir -p /run/runit/supervise
+
+if [ ! -z $runitdir ] && [ -d /etc/runit/runsvdir/"$runitdir" ]; then
+	runsv_dir="$runitdir"
+else
+	runsv_dir=default
+fi
+
+# This script is also invoked in runit-systemd and runit-sysv packages.
+# We must start sulogin and sysv scripts only if `runit' is current init
+# system.
+if [ -f /run/runit.stopit ] ; then
+	# single mode
+	if grep -q -w -i 'single' /proc/cmdline ; then
+		chpst -P /sbin/sulogin -p /dev/tty1
+	fi
+	runsvchdir "$runsv_dir"
+
+	# Give sysv scripts 90 seconds (hardcoded in async-timeout source) to
+	# start. If something goes wrong, they are detached from controlling
+	# terminal.
+	#
+	# In this case tty1 would likely look ugly -- output from sysv scripts
+	# is written over terminal session, but at least we would be able to
+	# login.
+
+	if [ "$runsv_dir" != solo ]; then
+		/lib/runit/async-timeout /lib/runit/run_sysv_scripts '/etc/rc2.d'
+	fi
+else
+	runsvchdir svmanaged
+fi
+
+exec env - PATH=$PATH \
+runsvdir -P "${SVDIR}" 'log: ...........................................................................................................................................................................................................................................................................................................................................................................................................'

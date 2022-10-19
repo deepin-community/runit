@@ -1,0 +1,19 @@
+#!/bin/sh
+# system one time tasks
+
+PATH=/sbin:/usr/sbin:/bin:/usr/bin
+
+/lib/runit/run_sysv_scripts '/etc/rcS.d'
+
+# Now /run is mounted.
+touch /run/runit.stopit
+chmod 0 /run/runit.stopit
+
+# That is it.  We do as little, as possible at stage1. Services, that do
+# not have runscripts and invoked via init.d scripts are started at
+# stage2. This way, daemon that hangs or otherwise misbehave do not
+# block whole boot process.
+#
+# Thanks to Lornenz for suggestion.
+
+# vim: ft=sh

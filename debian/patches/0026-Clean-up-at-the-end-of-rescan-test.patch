@@ -1,0 +1,20 @@
+Description: <Clean up at the end of forced rescan test>
+Author: <Lorenzo Puliti plorenzo@disroot.org>
+Forwarded: <not-needed>
+Last-Update: 2020-09-24 <YYYY-MM-DD, last update of the meta-information, optional>
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+--- a/runit-2.1.2/src/t/runtest.sh
++++ b/runit-2.1.2/src/t/runtest.sh
+@@ -34,9 +34,11 @@
+ 
+ if [[ ${diff} -lt 1000000000 ]] ; then
+     echo "fine. forced-rescan seems to work"
++    rm -rf timestamp/supervise/ service/ || true
+     exit 0
+ else
+     echo "bad. forced-rescan took too long"
++    rm -rf timestamp/supervise/ service/ || true
+     exit 1
+ fi
+     

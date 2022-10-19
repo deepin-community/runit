@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# note: only socklog exists as runit service in Debian right now
+
+for service in rsyslog socklog-unix syslog-ng busybox-syslogd inetutils-syslogd ; do
+		sv u $service && sv check $service && exit 0
+done
+
+exit 1

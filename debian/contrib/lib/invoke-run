@@ -1,0 +1,96 @@
+#!/bin/sh -eu
+
+usage () {
+	cat << EOF >&2
+Program /lib/runit/invoke-run must only be used as interpreter for
+run scripts with full path, matching /etc/sv/*/run pattern.
+
+Please, refer to documentation in manual page invoke-run(5). If error
+persist, file bug report aganist 'runit' Debian package.
+EOF
+}
+
+if [ $# = 0 ] ; then
+	usage
+	exit 1
+fi
+
+runscript=$(readlink -f "${1}")
+# We should get runscript=/etc/sv/<service>/run, but here we check it,
+# otherwise wierd things might happen.
+
+case "${runscript}" in
+(/etc/sv/*/run) # correct
+	service=${runscript%/run}
+	service=${service#/etc/sv/}
+	;;
+(*)
+	usage
+	exit 1
+	;;
+esac
+readonly runscript service
+
+export NAME=$service
+
+if [ -x /usr/sbin/policy-rc.d ]; then
+	set +e
+	 /usr/sbin/policy-rc.d $NAME start
+	 # 0 or 104=ok // 101 = do not run
+	 rc=$?
+	 set -e
+	 if [ "$rc" = "101" ]; then
+		echo "action denied by policy-rc.d"
+		sv d $NAME
+		exit 0
+	 fi
+fi
+
+if [ -f "/etc/sv/${service}/.meta/installed" ] ; then
+	readonly installed="/usr/share/runit/meta/${service}/installed"
+	# uninstalled, but not purged. See #929693 and commit [4c485b]
+	# in dh-runit repository.
+	if ! [ -f "${installed}" ] ; then
+		echo "runsv: $NAME binary not installed"
+		sv down "${service}"
+		exit 0
+	fi
+fi
+
+if [ -r /etc/default/runit ]; then
+    set -a
+    . /etc/default/runit
+    set +a
+fi
+
+if [ -r "/etc/default/${service}" ] ; then
+	# export all assigned variables, allow references to
+	# undefined variables.
+	set -a +u
+	. "/etc/default/${service}"
+	set +a -u
+fi
+
+readonly initscript="/etc/init.d/${service}"
+readonly noreplace="/usr/share/runit/meta/${service}/noreplace"
+
+if [ -x "${initscript}" ] ; then
+	# Stopping some services (e.g display manager) is disruptive
+	# and must be done only manually by user.
+	if [ -f "${noreplace}" ] ; then
+		if "${initscript}" status >/dev/null 2>&1 ; then
+			sv down "${service}"
+			exit 0
+		fi
+	fi
+	if [ ! -h "${initscript}" ]; then
+	# don't stop the script if it's a symlink: it's likely to /usr/bin/sv/
+		"${initscript}" stop >/dev/null
+	fi
+fi
+
+if [ -d "/etc/sv/${service}/conf" ] ; then
+	exec chpst -e "/etc/sv/${service}/conf" -- /bin/sh "${runscript}"
+else
+	exec /bin/sh "${runscript}"
+fi

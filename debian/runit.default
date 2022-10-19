@@ -1,0 +1,7 @@
+# system wide setting for runit services
+
+# print runsv messages about starting and stopping the service
+VERBOSE=0
+
+# print additional debug info: run's exit code
+DEBUG=0

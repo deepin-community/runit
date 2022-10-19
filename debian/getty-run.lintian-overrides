@@ -1,0 +1,9 @@
+# Sysv provides gettys via inittab
+getty-run: package-supports-alternative-init-but-no-init.d-script etc/sv/getty-tty1/run
+getty-run: package-supports-alternative-init-but-no-init.d-script etc/sv/getty-tty2/run
+getty-run: package-supports-alternative-init-but-no-init.d-script etc/sv/getty-tty3/run
+getty-run: package-supports-alternative-init-but-no-init.d-script etc/sv/getty-tty4/run
+getty-run: package-supports-alternative-init-but-no-init.d-script etc/sv/getty-tty5/run
+getty-run: package-supports-alternative-init-but-no-init.d-script etc/sv/getty-tty6/run
+getty-run: package-supports-alternative-init-but-no-init.d-script etc/sv/getty-ttyS0/run
+getty-run: package-supports-alternative-init-but-no-init.d-script etc/sv/getty-hvc0/run

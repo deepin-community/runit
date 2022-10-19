@@ -1,0 +1,2 @@
+# the sysv integration is provided with an entry in /etc/inittab
+runit-run: package-supports-alternative-init-but-no-init.d-script usr/lib/systemd/system/runit.service

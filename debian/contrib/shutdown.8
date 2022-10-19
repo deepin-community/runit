@@ -1,0 +1,92 @@
+.TH SHUTDOWN 8 "August 29, 2021" "" "GNU/Linux System Adminstrator's manual"
+.SH NAME
+shutdown, reboot, poweroff \- poweroff or reboot the system
+.SH SYNOPSIS
+.B /sbin/shutdown [-r] [-f] [-F]
+.br
+.B /sbin/reboot [-w] [-f] [-n]
+.br
+.B /sbin/halt [-w] [-f] [-n]
+.br
+.B /sbin/poweroff [-w] [-f] [-n]
+.SH DESCRIPTION
+.BR Shutdown
+is a program to poweroff or reboot the system that maintains some compatibility with
+original SysV-init halt, poweroff, reboot and shutdown programs.
+These programs are expected by some initscripts, graphical desktop environments and tools like acpi.
+.RE
+When called as shutdown, halt or poweroff without options,
+.BR runit(8)
+is told to shutdown the system and poweroff.
+.RE
+When called as reboot
+.BR runit(8)
+is told to reboot the system.
+.RE
+When
+.BR runit(8)
+is not the current init system this program sends data in the appropriate format to perform the requested action to the initctl pipe, if it exists.
+.SH SHUTDOWN OPTIONS
+
+.TP
+.B \-r
+Reboot the system instead of poweroff.
+
+.TP
+.B \-f
+Write a
+.B /fastboot
+flag file. The program or the scripts responsible for the system boot task can test for this file when the system comes up again and decide to skip fsck.
+The program or the scripts that perform the boot task also need to take care of the removal of the flag file.
+
+.TP
+.B \-F
+Write a
+.B /forcefsck
+flag file. The program or the scripts responsible for the system boot task can test for this file when the system comes up again and decide to run fsck with a 'force' flag.
+The program or the scripts that perform the boot task also need to take care of the removal of the flag file.
+
+.SH HALT OPTIONS
+
+.TP
+.B \-f
+Invoke sync(), then force an unsafe reboot or poweroff immediately without signaling the init system.
+This will likely result in an unclean shutdown and can cause data loss or corruption.
+When runit is init, this option is a No-Op and all other options are ignored. See #899246
+
+.TP
+.B \-\-force
+Invoke sync(), then force an unsafe reboot or poweroff immediately without signaling the init system.
+This will likely result in an unclean shutdown and can cause data loss or corruption.
+This option works regardless of the running init system.
+
+.TP
+.B \-w, \-\-wtmp\-only
+No-Op, maintained for compatibility with initscripts. See #919699
+
+.TP
+.B \-n
+Write a
+.B /etc/runit/nosync
+flag file. If this file exists runit does not invoke sync() before reboot or poweroff.
+The
+.B /etc/runit/nosync
+flag file is also checked when this program is called with
+.B \-f
+or
+.B \-\-force
+
+.SH SWITCHING FORM OTHER INIT SYSTEMS
+This program maintains a compatibility layer with SysV-init's initctl pipe according to the spec described in SysV-init's initctl(5). This allow one to reboot the system when switching from another init to runit-init.
+.RE
+Currently only switching from systemd and SysV-init is tested but any other init system that maintains an initctl pipe compatible with SysV's one should work.
+
+.SH BUGS
+Combining flags, like
+.B halt -wf
+is not supported, all merged short options will be ignored.
+.RE
+Non existent or unsupported options are silently ignored.
+
+.SH SEE ALSO
+.BR init (8)

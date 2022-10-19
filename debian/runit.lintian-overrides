@@ -1,0 +1,12 @@
+# echo is used to warn that the script is not meant to be executed, but sourced
+# see #943397 message #10
+unusual-interpreter
+# executable are under /lib/runit/
+# init, runlevel and shutdown are also shipped as compatibility symlinks under /sbin
+# by runit-init package
+runit: spare-manual-page usr/share/man/man8/invoke-run.8.gz
+runit: spare-manual-page usr/share/man/man8/runit-init.8.gz
+runit: spare-manual-page usr/share/man/man8/runit-runlevel.8.gz
+runit: spare-manual-page usr/share/man/man8/runit-shutdown.8.gz
+# default-syslog is runit-only, equivalent of insserv facilities for sysv
+runit: package-supports-alternative-init-but-no-init.d-script etc/sv/default-syslog/run

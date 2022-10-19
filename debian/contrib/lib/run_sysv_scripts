@@ -1,0 +1,21 @@
+#!/bin/sh -u
+# Deliberately NO `set -e'. See #923957.
+initdir="${1}"
+set +u
+if [ x = x$2 ]; then
+	rcommand=start
+	rX=S
+else
+	rcommand=stop
+	rX=K
+fi
+set -u
+for script in "$initdir/$rX"* ; do
+	path=$(realpath "$script")
+	name=$(basename "$path")
+	# Special case for wicd. Runscript is called "wicd-daemon",
+	# to match binary package name.
+	[ -d "/etc/sv/$name" ] && continue
+	[ -d "/etc/sv/$name-daemon" ] && continue
+	"$script" "$rcommand"
+done

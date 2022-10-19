@@ -1,0 +1,38 @@
+#!/bin/echo this script must be sourced, not executed.
+set -e
+
+. /etc/default/runit
+NAME=${PWD##*/}
+
+if [ "${VERBOSE:-0}" != 0 ] ; then
+	trap "echo invoke-run: $NAME stopped" EXIT
+fi
+
+case $1 in
+(-1)
+	echo "invoke-run: ERROR $1 in $NAME: runscript didn't exit normally"
+	# no need to sv d service here, runsv will stop trying after the first attempt
+	;;
+
+(161)
+	echo "invoke-run: WARNING for $NAME: disabled by local settings"
+	sv d $NAME
+	exit 0
+	;;
+
+(162)
+	echo "invoke-run: ERROR $1 in $NAME: configtest or early setup failed"
+	sv d $NAME
+	exit 0
+	;;
+
+(170)
+	echo "invoke-run: ERROR $1 in $NAME: a runtime hard dependecy is missing"
+	sv d $NAME
+	exit 0
+	;;
+esac
+
+if [ "${DEBUG:-0}" != 0 ] ; then
+	echo "invoke-run: $NAME : run exit code is $1"
+fi

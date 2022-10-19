@@ -1,0 +1,8 @@
+#!/bin/sh -euC
+SERVICE=getty-hvc0
+if [ "$1" = 163 ] ; then
+    echo "runsv: ERROR in $SERVICE: another getty already on hvc0"
+    sv d "$(dirname "${0}")"
+    exit 0
+fi
+exec utmpset -w hvc0

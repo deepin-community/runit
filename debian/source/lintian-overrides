@@ -1,0 +1,4 @@
+ # those binary and manpages are part of the Debian integration of runit,
+ # not relevant upstream
+ runit source: maintainer-manual-page debian/contrib/*.8
+ runit source: maintainer-manual-page debian/contrib/man/invoke-run.5

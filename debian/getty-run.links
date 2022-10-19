@@ -1,0 +1,3 @@
+/etc/sv/getty-tty1 /etc/runit/runsvdir/default/getty-tty1
+/etc/sv/getty-tty1 /etc/runit/runsvdir/solo/getty-tty1
+/etc/sv/getty-ttyS0 /etc/runit/runsvdir/solo/getty-ttyS0

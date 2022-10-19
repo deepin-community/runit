@@ -1,0 +1,8 @@
+debian/auto/getty-tty1 onupgrade=nostop
+debian/auto/getty-tty2 onupgrade=nostop
+debian/auto/getty-tty3 onupgrade=nostop
+debian/auto/getty-tty4 onupgrade=nostop
+debian/auto/getty-tty5 onupgrade=nostop
+debian/auto/getty-tty6 onupgrade=nostop
+debian/sv/getty-ttyS0 disable,onupgrade=nostop
+debian/sv/getty-hvc0 disable,onupgrade=nostop

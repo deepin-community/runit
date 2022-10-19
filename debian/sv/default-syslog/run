@@ -1,0 +1,18 @@
+#!/bin/sh
+
+# USAGE:
+# add a line like the following in the run file of a service that sends its logs to syslog
+#      'sv start default-syslog  &&  sv check default-syslog  ||  exit 170'
+# this will make sure that a syslog daemon is avaliable before the service is up
+# for a list of supported syslog daemons see the check file
+# note that this only work if a native runit service exists for a syslog daemon
+
+# as long as the syslog service that you are using only is available as sysvinit
+# script, this service is useless and can be disabled:
+# no need to check for the syslog daemon since sysvscripts are always started
+# before runsvdir - see stage 2
+
+# given that the trick is done in the check file, the sleep number here can be raised at
+# will, it really doesn't change anything for this service
+
+exec sleep 600

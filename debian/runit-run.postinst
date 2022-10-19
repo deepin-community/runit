@@ -1,0 +1,38 @@
+#!/bin/sh
+set -e
+
+rescan_inittab () {
+	# other inits maintain a compat initctl pipe, so we check that is not
+	# systemd, that initctl exists and that sysvinit-core is installed
+	if [ ! -d /run/systemd/system ] && [ -e /run/initctl ] ; then
+		if [ -e /sbin/telinit ] ; then
+			# rescan inittab to pick new entry
+			telinit q
+		fi
+	fi
+}
+
+write_inittab () {
+	if ! grep -q '^#runit-sysv maintscript -- BEGIN' /etc/inittab ; then
+		cat /etc/inittab - <<EOF > /etc/inittab.tmp
+
+#runit-sysv maintscript -- BEGIN
+SV:123456:respawn:/etc/runit/2
+#runit-sysv maintscript -- END
+EOF
+		mv /etc/inittab.tmp /etc/inittab
+		rescan_inittab
+	fi
+}
+
+if [ -f /etc/inittab ]; then
+	write_inittab
+fi
+
+case "$1" in
+    triggered)
+	write_inittab
+    ;;
+esac
+
+#DEBHELPER#

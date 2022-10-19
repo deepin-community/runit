@@ -1,0 +1,15 @@
+#!/bin/sh
+NAME=getty-ttyS0
+
+if pgrep -x agetty -t ttyS0; then
+    sv d getty-ttyS0
+    echo "already another getty on ttyS0"
+fi
+
+exec 2>&1
+
+if [ -e /sbin/fgetty ]; then
+    exec chpst -P fgetty /dev/ttyS0
+else
+    exec /sbin/getty -L ttyS0 9600 vt100
+fi

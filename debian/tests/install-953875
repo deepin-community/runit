@@ -1,0 +1,29 @@
+#!/bin/sh
+set -e
+
+# this test make sure that runit is installable in a default system
+# without causing trouble or unexpected results, and quickly caught
+# regressions
+# see #953875 and #960705
+
+#check that systamd is the init (symlink of /sbin/init --> /lib/systemd/systemd )
+init_symlink=$(readlink /sbin/init)
+is_init="$(basename "$init_symlink")"
+echo "init is "$is_init""
+
+# attempt to install runit
+echo "installing runit..."
+apt-get install -y runit
+echo "done"
+
+#check that /sbin/init still points to systemd
+init_symlink=$(readlink /sbin/init)
+is_init=$(basename $init_symlink)
+
+if [ "$is_init" = systemd ]; then
+    echo "OK: the default init is still systemd"
+    exit 0
+else
+    echo "FAIL: init switched to "$is_init" "
+    exit 1
+fi

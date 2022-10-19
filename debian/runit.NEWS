@@ -1,0 +1,82 @@
+runit (2.1.2-41exp1) experimental; urgency=medium
+
+    If you are using the policy-rc.d hack as a way to control systemd or sysv
+    services please be aware that runit's runscripts now check for the
+    /usr/sbin/policy-rc.d script via invoke-run(5) interpreter.
+    If the script returns 101 the service will be set down; this will prevent
+    services to start also during the boot process or when controlled via
+    sv program. See invoke-run(5) man page for more details.
+    
+ -- Lorenzo Puliti <plorenzo@disroot.org>  Wed, 31 Mar 2021 15:36:05 +0200
+
+runit (2.1.2-38) unstable; urgency=medium
+
+    New runit-run package
+    
+     Before runit 2.1.2-37 sysvinit and systemd integration were provided
+     as separate package ( runit-sysv and runit-systemd) but this design
+     proved to cause several RC bug (see #953875 and #934646):
+     all runit integrations are now merged into a new package called
+     runit-run that does not depends on any specific init.
+     This change only affects users that are using runit as supervision
+     suite under another init system.
+    
+    Runit in container
+    
+     You can now boot into a custom rundirectory by passing the
+     runitdir=yourcustomdir variable to the kernel command line.
+     The directory must exists under /etc/runit/runsvdir/ .
+     As a special case (mainly intended for containers), runit package
+     provides a 'solo' rundirectory: when this directory is selected, runit will
+     also skip all sysv instance of services: be aware that, if used as is, it will
+     start only a getty on tty1. This is documented in runit(8) manpage.
+     
+ -- Lorenzo Puliti <plorenzo@disroot.org>  Wed, 21 Oct 2020 18:32:31 +0200
+
+runit (2.1.2-4) unstable; urgency=medium
+
+    Runit no longer provides /sbin/runsvdir-start symbolic link to
+    /etc/runit/2. Everything this package provides now directly
+    refers to /etc/runit/2, including systemd's service file, but
+    scripts and configuration outside may be need updated.
+
+ -- Dmitry Bogatov <KAction@gnu.org>  Tue, 31 May 2016 21:51:28 +0300
+
+runit (1.9.0-1) unstable; urgency=low
+
+    runit's default directory for services has been /var/service/ for
+    quite some years.  The usage of the directory /var/service/ does
+    not comply with the Filesystem Hierarchy Standard (FHS) though,
+    and there are no signs that this will change.
+
+    With version 1.9.0 the runit upstream package switched from
+    /var/service/ to /service/ (which doesn't comply with the FHS
+    either).
+
+    The Debian package from now on uses /etc/service/, on upgrade from
+    previous versions of the runit Debian package, a compatibility
+    symlink /var/service -> /etc/service is retained.  Nevertheless,
+    existing programs or scripts that deal with the contents of the
+    default directory for services should be adapted.  Take a look at
+    the new update-service(8) program when doing so.
+
+    To be consistent with existing documentation, it is recommended to
+    create a compatibility symlink through
+
+     ln -s /etc/service /service
+
+    after installing the runit Debian package.
+
+ -- Gerrit Pape <pape@smarden.org>  Thu, 08 May 2008 00:30:39 +0000
+
+runit (1.4.1-1) unstable; urgency=low
+
+    With this version the runsvctrl, runsvstat, svwaitdown, and svwaitup
+    programs no longer are being installed, the functionality of these
+    programs has been incorporated into the sv program.
+
+    The documentation now suggest to put service directories by default
+    into the /etc/sv/ directory, and a list of frequently asked questions
+    with answers has been added.
+
+ -- Gerrit Pape <pape@smarden.org>  Sat, 13 May 2006 14:55:09 +0000

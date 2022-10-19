@@ -1,0 +1,204 @@
+.TH INVOKE-RUN 8 "Jan 21, 2019" "" "GNU/Linux System Adminstrator's manual"
+.SH NAME
+invoke-run \- runscript interpreter
+.SH SYNOPSIS
+.B /usr/bin/env /lib/run/invoke-run
+.SH DESCRIPTION
+The
+.B runit
+supervision system uses scripts, called
+.I runscripts
+to start services. By convention, runscript for a service
+.I foo
+is located at
+.BI "/etc/sv/" foo "/run"
+.PP
+Debhelper addon
+.I dh_runit
+installs runscript according this convention.
+.PP
+Runscript can be any executable file. Runscript can use
+.B invoke-run
+interpreter only if it is installed according convention,
+.PP
+To use
+.B invoke-run
+interpreter, runscript
+.BI "/etc/sv/" foo "/run"
+for service
+.I foo
+must begin with following line:
+.PP
+.IP "" 4
+.EX
+#!/usr/bin/env /lib/runit/invoke-run
+.EE
+.PP
+If the script
+.BI /usr/sbin/policy-rc.d
+exists the policy layer is checked (see below).
+If init.d script
+.BI /etc/init.d/ foo
+exists, it is invoked with
+.B stop
+argument to gracefully handle package upgrade to version,
+introducing runscript. After that,
+.I /bin/sh
+shell interpret rest of runscript, with some additional environment
+set according following rules:
+.IP "" 4
+A
+.BI NAME= foo
+variable is exported.
+.PP
+.IP "" 4
+The
+.BI /etc/default/runit
+file is interpreted with
+.I /bin/sh
+and all variable assignment are accessible to runscript.
+.PP
+.IP "" 4
+If file
+.BI /etc/default/ foo
+exists, it is interpreted with
+.I /bin/sh
+and all variable assignment are accessible to runscript.
+.PP
+.IP "" 4
+If directory
+.BI "/etc/sv/" foo "/conf"
+exists, variables are set according to rules, documented
+in
+.I envdir
+section of
+.BR chpst (8)
+manual.
+.PP
+If both
+.BI /etc/default/ foo
+file and
+.BI "/etc/sv/" foo "/conf"
+directory define some variable, value from directory takes precedence.
+.SH SPECIAL ERROR CODE
+Looking in the
+.I foo
+service log it's possible to see messages in the form of
+.IP "" 2
+invoke-run: ERROR [NNN] in foo: reason for the error
+.PP
+These messages don't come from runsv itself but from
+.B invoke-run,
+the run file or the finish file. The purpose of these message
+is to detail a permanent failure condition that prevents
+.I foo
+service from being up.
+For each
+.I foo
+service, possible errors and messages are:
+.IP "" 2
+.B invoke-run: foo binary not installed
+.PP
+.IP "" 4
+this happens when the package containing
+.I foo
+binary has been removed, but not purged.
+.PP
+.IP "" 2
+.B invoke-run: ERROR -1 in foo: runscript didn't exit normally
+.PP
+.IP "" 4
+this message comes from the finish file, but the exit code comes from
+.BR runsv (8)
+and is documented in its manpage.
+.PP
+.IP "" 2
+.B invoke-run: WARNING for foo: disabled by local settings
+.PP
+.IP "" 4
+Some service specific setting prevent
+.I foo
+from starting; it's likely something in
+.BI /etc/default/foo
+.PP
+.IP "" 2
+.B invoke-run: ERROR 162 in foo: configtest or early setup failed
+.PP
+.IP "" 4
+A configuration file of
+.I foo
+is malformed and the configtest failed;
+.I foo
+log may contain additional info from the test itself.
+Alternatively the runscript has failed to do some setup that is essential to the
+.I foo
+service.
+.PP
+.IP "" 2
+.B invoke-run: ERROR 170 in foo: a runtime hard dependency is missing
+.PP
+.IP "" 4
+A dependency failed the check and can't be bring up; to know dependencies of
+.I foo
+service look for "sv start" in "run" script.
+.PP
+.SH FINISH FILE AND FINISH-DEFAULT
+Since version 2.1.2-36 the Debian runit package ships a
+.BI /lib/runit/finish-default
+file that contains code that can be shared across different services.
+This file can be sourced inside the regular finish file of a service,
+like the following example
+
+.EX
+ $ cat /etc/sv/foo/finish
+ #!/bin/sh
+ set -e
+\ . /lib/runit/finish-default "$@"
+.EE
+
+Services that need to put specific code into the finish file should do after
+the line that sources finish-default. For each
+.I foo
+service, finish-default file sources
+.BI /etc/default/runit,
+export a
+.BI NAME=foo
+variable and defines special error codes as described in the previous section.
+Also, when VERBOSE mode is on,
+.BI EXIT
+is trapped so that a 'foo stopped' message gets printed
+at the very end of the finish file.
+.SH POLICY-RC.D LAYER
+Since version 2.1.2-41
+.BI invoke-run
+support the
+.BI policy-rc.d
+hack. When the
+.BI /usr/sbin/policy-rc.d
+script exists, for each service
+.BI invoke-run
+calls
+.B '/usr/sbin/policy-rc.d service'
+and check the return code.
+On
+.BI 101
+it sets the wanted status for the service as down and exits immediately.
+Any other return code is ignored and
+.BI invoke-run
+will proceed with starting the service.
+The main use case for the
+.BI policy-rc.d
+hack is for the Debian Installer to prevent services to start in chroot during the
+installation process; however in the past the hack was used also by local admins
+to perform custom actions. Local admin that want to use the
+.BI policy-rc.d
+layer should be aware that with runit the hack prevents the service to start
+under any condition, including during the boot sequence.
+This is different from other init systems like systemd or sysv, where the hack
+only prevents services to start when invoked via maintscripts.
+
+.SH SEE ALSO
+.BR runsvdir (8),
+.BR dh_runit (1),
+.BR chpst (8)
+

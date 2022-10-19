@@ -1,0 +1,76 @@
+#!/bin/sh
+set -e
+
+check_init_is_runit () {
+	echo "detecting runit-init"
+	if [ -e /run/runit.stopit ]; then
+		echo "OK"
+	else
+		echo "init is not runit"
+		exit 1
+	fi
+}
+
+check_services_are_running () {
+	echo "detecting gettys"
+	if pidof getty; then
+		echo "OK"
+	elif pidof fgetty; then
+		echo "OK"
+	else
+		echo " no getty to perform login with "
+		exit 1
+	fi
+	echo "getting the runsvdir log:"
+	ps aux | grep runsvdir
+	echo "Detecting active services.."
+	sv status /etc/service/*
+	service udev status
+	service rsyslog status
+	service cron status
+	service dbus status
+	#service --status-all # not usable since some services will exit nonzero with [?]
+	echo "OK"
+}
+
+
+if [ -z "$AUTOPKGTEST_REBOOT_MARK" ]; then
+	if [ -d /run/systemd/system ]; then
+		init=systemd
+	elif [ -e /run/initctl ]; then
+		init=sysv
+	else
+		init=unknown-init
+	fi
+	echo "testbed is running with $init"
+
+	# Installation runit-init must be done inside the test 
+	# until it becomes a dependency of 'init' package
+
+	echo "installing runit-init"
+	apt-get install -y --allow-remove-essential runit-init
+	if [ -e /tmp/autopkgtest-reboot ]; then
+		echo "enabling the serial getty"
+		ln -s /etc/sv/getty-ttyS0 /etc/service/
+		echo "Done"
+		echo "preparing for reboot"
+		/tmp/autopkgtest-reboot-prepare runit1
+		reboot
+	else
+		echo "testbed does not support reboot"
+		echo "can't perform this test"
+		exit 1
+	fi
+elif [ "$AUTOPKGTEST_REBOOT_MARK" = runit1 ]; then
+	check_init_is_runit
+	check_services_are_running
+
+	echo "Attempting a reboot with runit"
+	/tmp/autopkgtest-reboot-prepare runit2
+	reboot
+else
+	check_init_is_runit
+	check_services_are_running
+	echo "switching to runit init complete"
+fi
+echo "test done"
